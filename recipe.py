@@ -50,6 +50,9 @@ class Recipe:
     def output_per_s(self):
         return [item * self.parallel_count / self.duration for item in self.output]
 
+    def input_per_s(self):
+        return [item * self.parallel_count / self.duration for item in self.input]
+
 
 recipes = [
     Recipe(
@@ -109,17 +112,9 @@ def calculate_target(
         f"{indent}{real_recipe.parallel_count:.2g} [{assembler.name}]s of [{target}] making {target_count_per_s:.2g}/s"
     )
 
-    for item in real_recipe.input:
-        calculate_target(
-            item.name, item.count * real_recipe.parallel_count, assembler, indent + "  "
-        )
+    for item in real_recipe.input_per_s():
+        calculate_target(item.name, item.count, assembler, indent + "  ")
 
 
-calculate_target("Logistic tech card", 1, ideal_assembler)
-print()
 calculate_target("Logistic tech card", 1, assembler_1)
-print()
-
-calculate_target("Electronic circuit", 1, ideal_assembler)
-print()
-calculate_target("Electronic circuit", 2, ideal_assembler)
+calculate_target("Electronic circuit", 2, assembler_1)
