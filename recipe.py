@@ -16,10 +16,12 @@ class RecipeItem:
 
 @dataclass
 class Assembler:
+    name: str
     speed: float
 
 
-assembler_1 = Assembler(0.5)
+ideal_assembler = Assembler("ASSEMBLER", 1)
+assembler_1 = Assembler("Assembler 1", 0.5)
 
 
 @dataclass
@@ -85,24 +87,39 @@ def resolve_recipe(name: str) -> Recipe | None:
     if name in axioms:
         return None
     # todo: handle recipes with multiple outputs at some point
-    target_recipes = [recipe for recipe in recipes if recipe.output[0].name == target]
+    target_recipes = [recipe for recipe in recipes if recipe.output[0].name == name]
     assert len(target_recipes) == 1
     return target_recipes[0]
 
 
-target = "Logistic tech card"
-target_count_per_s = 1
-target_recipe = resolve_recipe(target)
-if target_recipe is None:
-    exit()
-scaled_recipe = target_recipe.parallel(
-    target_recipe.duration / target_recipe.output[0].count
-)
-real_recipe = scaled_recipe.on_assembler(assembler_1)
+def calculate_target(
+    target: str, target_count_per_s: float, assembler: Assembler, indent: str = ""
+):
+    target_recipe = resolve_recipe(target)
+    if target_recipe is None:
+        print(f"{indent}{target_count_per_s:.2g}/s of [{target}]")
+        return
+    scaled_recipe = target_recipe.parallel(
+        target_count_per_s * target_recipe.duration / target_recipe.output[0].count
+    )
+    real_recipe = scaled_recipe.on_assembler(assembler)
+    # pprint(real_recipe)
+
+    print(
+        f"{indent}{real_recipe.parallel_count:.2g} [{assembler.name}]s of [{target}] making {target_count_per_s:.2g}/s"
+    )
+
+    for item in real_recipe.input:
+        calculate_target(
+            item.name, item.count * real_recipe.parallel_count, assembler, indent + "  "
+        )
 
 
-pprint(scaled_recipe)
-pprint(scaled_recipe.output_per_s())
+calculate_target("Logistic tech card", 1, ideal_assembler)
 print()
-pprint(real_recipe)
-pprint(real_recipe.output_per_s())
+calculate_target("Logistic tech card", 1, assembler_1)
+print()
+
+calculate_target("Electronic circuit", 1, ideal_assembler)
+print()
+calculate_target("Electronic circuit", 2, ideal_assembler)
