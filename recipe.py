@@ -22,6 +22,12 @@ class Assembler:
 
 ideal_assembler = Assembler("ASSEMBLER", 1)
 assembler_1 = Assembler("Assembler 1", 0.5)
+assembler_2 = Assembler("Assembler 2", 0.75)
+assembler_3 = Assembler("Assembler 3", 1.25)
+filtration_plant = Assembler("Filtration plant", 1)
+crusher = Assembler("Crusher", 1)
+stone_furnace = Assembler("Stone furnace", 1)
+steel_furnace = Assembler("Steel furnace", 2)
 
 
 @dataclass
@@ -30,6 +36,7 @@ class Recipe:
     input: list[RecipeItem]
     duration: float
     _name: str | None = None
+    _assembler: Assembler | None = None
     parallel_count: float = 1
 
     def parallel(self, count: float):
@@ -38,6 +45,7 @@ class Recipe:
             [item / count for item in self.input],
             self.duration / count,
             self._name,
+            self._assembler,
             self.parallel_count * count,
         )
 
@@ -47,6 +55,7 @@ class Recipe:
             self.input,
             self.duration / assembler.speed,
             self._name,
+            assembler,
             self.parallel_count / assembler.speed,
         )
 
@@ -55,6 +64,16 @@ class Recipe:
 
     def input_per_s(self):
         return [item * self.parallel_count / self.duration for item in self.input]
+
+    def named(self, name: str):
+        return Recipe(
+            self.output,
+            self.input,
+            self.duration,
+            name,
+            self._assembler,
+            self.parallel_count,
+        )
 
     @property
     def name(self):
@@ -91,12 +110,36 @@ recipes = [
         [RecipeItem("Petroleum gas", 45)],
         [RecipeItem("Crude oil", 100)],
         5,
-        "Basic oil processing",
+    ).named("Basic oil processing"),
+    Recipe([RecipeItem("Sand", 7.5)], [RecipeItem("Stone", 3)], 1).on_assembler(
+        crusher
+    ),
+    Recipe(
+        [RecipeItem("Quartz", 6)],
+        [RecipeItem("Sand", 10), RecipeItem("Water", 10)],
+        2.1,
+    ).on_assembler(filtration_plant),
+    Recipe([RecipeItem("Silicon", 9)], [RecipeItem("Quartz", 18)], 16).on_assembler(
+        stone_furnace
+    ),
+    Recipe([RecipeItem("Glass", 8)], [RecipeItem("Sand", 16)], 16).on_assembler(
+        stone_furnace
+    ),
+    Recipe(
+        [RecipeItem("Electronic components", 4)],
+        [
+            RecipeItem("Glass", 2),
+            RecipeItem("Silicon", 2),
+            RecipeItem("Plastic bar", 2),
+        ],
+        4,
     ),
 ]
 
 # "axioms" is a cute name for the set of items we just assume are freely available
-axioms = ["Iron plate", "Copper plate", "Wood"]
+axioms = ["Iron plate", "Copper plate", "Wood", "Water", "Stone"]
+# TODO
+axioms += ["Plastic bar"]
 
 
 def resolve_recipe(name: str) -> Recipe | None:
@@ -104,12 +147,17 @@ def resolve_recipe(name: str) -> Recipe | None:
         return None
     # todo: handle recipes with multiple outputs at some point
     target_recipes = [recipe for recipe in recipes if recipe.name == name]
-    assert len(target_recipes) == 1
+    assert (
+        len(target_recipes) == 1
+    ), f"expected one recipe matching {name} but got {len(target_recipes)}"
     return target_recipes[0]
 
 
 def calculate_target(
-    target: str, target_count_per_s: float, assembler: Assembler, indent: str = ""
+    target: str,
+    target_count_per_s: float,
+    default_assembler: Assembler,
+    indent: str = "",
 ):
     target_recipe = resolve_recipe(target)
     if target_recipe is None:
@@ -118,16 +166,20 @@ def calculate_target(
     scaled_recipe = target_recipe.parallel(
         target_count_per_s * target_recipe.duration / target_recipe.output[0].count
     )
-    real_recipe = scaled_recipe.on_assembler(assembler)
-    # pprint(real_recipe)
+
+    # TODO probably a nicer way to check this
+    real_recipe = (
+        scaled_recipe.on_assembler(default_assembler)
+        if scaled_recipe._assembler is None
+        else scaled_recipe
+    )
 
     print(
-        f"{indent}{real_recipe.parallel_count:.2g} [{assembler.name}]s of [{target}] making {target_count_per_s:.2g}/s"
+        f"{indent}{real_recipe.parallel_count:.2g} [{real_recipe._assembler.name}]s of [{target}] making {target_count_per_s:.2g}/s"
     )
 
     for item in real_recipe.input_per_s():
-        calculate_target(item.name, item.count, assembler, indent + "  ")
+        calculate_target(item.name, item.count, default_assembler, indent + "  ")
 
 
-calculate_target("Logistic tech card", 1, assembler_1)
-calculate_target("Electronic circuit", 2, assembler_1)
+calculate_target("Electronic components", 8, assembler_1)
