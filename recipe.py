@@ -29,6 +29,7 @@ class Recipe:
     output: list[RecipeItem]
     input: list[RecipeItem]
     duration: float
+    _name: str | None = None
     parallel_count: float = 1
 
     def parallel(self, count: float):
@@ -36,6 +37,7 @@ class Recipe:
             [item / count for item in self.output],
             [item / count for item in self.input],
             self.duration / count,
+            self._name,
             self.parallel_count * count,
         )
 
@@ -44,6 +46,7 @@ class Recipe:
             self.output,
             self.input,
             self.duration / assembler.speed,
+            self._name,
             self.parallel_count / assembler.speed,
         )
 
@@ -52,6 +55,10 @@ class Recipe:
 
     def input_per_s(self):
         return [item * self.parallel_count / self.duration for item in self.input]
+
+    @property
+    def name(self):
+        return self._name or self.output[0].name
 
 
 recipes = [
@@ -80,6 +87,12 @@ recipes = [
         2,
     ),
     Recipe([RecipeItem("Copper cable", 8)], [RecipeItem("Copper plate", 4)], 2),
+    Recipe(
+        [RecipeItem("Petroleum gas", 45)],
+        [RecipeItem("Crude oil", 100)],
+        5,
+        "Basic oil processing",
+    ),
 ]
 
 # "axioms" is a cute name for the set of items we just assume are freely available
@@ -90,7 +103,7 @@ def resolve_recipe(name: str) -> Recipe | None:
     if name in axioms:
         return None
     # todo: handle recipes with multiple outputs at some point
-    target_recipes = [recipe for recipe in recipes if recipe.output[0].name == name]
+    target_recipes = [recipe for recipe in recipes if recipe.name == name]
     assert len(target_recipes) == 1
     return target_recipes[0]
 
