@@ -36,7 +36,7 @@ class Recipe:
     input: list[RecipeItem]
     duration: float
     _name: str | None = None
-    _assembler: Assembler | None = None
+    _assembler: Assembler = ideal_assembler
     parallel_count: float = 1
 
     def parallel(self, count: float):
@@ -145,7 +145,8 @@ axioms += ["Plastic bar"]
 def resolve_recipe(name: str) -> Recipe | None:
     if name in axioms:
         return None
-    # todo: handle recipes with multiple outputs at some point
+    # todo: handle recipes with multiple outputs at some point, or alternative
+    # recipes for a given target
     target_recipes = [recipe for recipe in recipes if recipe.name == name]
     assert (
         len(target_recipes) == 1
@@ -170,7 +171,7 @@ def calculate_target(
     # TODO probably a nicer way to check this
     real_recipe = (
         scaled_recipe.on_assembler(default_assembler)
-        if scaled_recipe._assembler is None
+        if scaled_recipe._assembler is ideal_assembler
         else scaled_recipe
     )
 
@@ -183,3 +184,5 @@ def calculate_target(
 
 
 calculate_target("Electronic components", 8, assembler_1)
+
+# TODO: print total buildings and input resources
