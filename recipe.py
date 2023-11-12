@@ -1,5 +1,5 @@
 from pprint import pprint
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass
@@ -40,23 +40,20 @@ class Recipe:
     parallel_count: float = 1
 
     def parallel(self, count: float):
-        return Recipe(
-            [item / count for item in self.output],
-            [item / count for item in self.input],
-            self.duration / count,
-            self._name,
-            self._assembler,
-            self.parallel_count * count,
+        return replace(
+            self,
+            output=[item / count for item in self.output],
+            input=[item / count for item in self.input],
+            duration=self.duration / count,
+            parallel_count=self.parallel_count * count,
         )
 
     def on_assembler(self, assembler: Assembler):
-        return Recipe(
-            self.output,
-            self.input,
-            self.duration / assembler.speed,
-            self._name,
-            assembler,
-            self.parallel_count / assembler.speed,
+        return replace(
+            self,
+            duration=self.duration / assembler.speed,
+            _assembler=assembler,
+            parallel_count=self.parallel_count / assembler.speed,
         )
 
     def output_per_s(self):
@@ -66,14 +63,7 @@ class Recipe:
         return [item * self.parallel_count / self.duration for item in self.input]
 
     def named(self, name: str):
-        return Recipe(
-            self.output,
-            self.input,
-            self.duration,
-            name,
-            self._assembler,
-            self.parallel_count,
-        )
+        return replace(self, _name=name)
 
     @property
     def name(self):
