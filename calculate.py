@@ -1,4 +1,6 @@
+from collections import defaultdict
 from pprint import pprint
+from typing import Iterator
 from model import Recipe, RecipeItem, Assembler, Assemblers, ReportLine
 from recipes import recipes
 
@@ -61,15 +63,41 @@ def print_report_line(line: ReportLine, indent: str = ""):
         print(f"{indent}{line.target_count_per_s:.2g}/s of [{line.target}]")
     else:
         print(
-            f"{indent}{line.parallel_count:.2g} [{line.assembler}]s of [{line.target}] making {line.target_count_per_s:.2g}/s"
+            f"{indent}{line.parallel_count:.2g} [{line.assembler.name}]s of [{line.target}] making {line.target_count_per_s:.2g}/s"
         )
 
     for sub_line in line.sub_lines:
         print_report_line(sub_line, indent + "  ")
 
 
-def print_report(line: ReportLine):
-    print_report_line(line)
+def all_lines(report: ReportLine) -> Iterator[ReportLine]:
+    yield report
+    for sub_line in report.sub_lines:
+        yield from all_lines(sub_line)
+
+
+def print_report(report: ReportLine):
+    print_report_line(report)
+
+    assembler_counts = defaultdict(float)
+    input_counts = defaultdict(float)
+    for l in all_lines(report):
+        if l.assembler is not None:
+            assembler_counts[l.assembler.name] += l.parallel_count
+        else:
+            input_counts[l.target] += l.target_count_per_s
+
+    print("")
+    print("Summary:")
+    print("-" * 80)
+    for a, n in sorted(
+        assembler_counts.items(), key=lambda item: item[1], reverse=True
+    ):
+        print(f"{n:.2g} [{a}]s")
+    print("")
+    for i, n in sorted(input_counts.items(), key=lambda item: item[1], reverse=True):
+        print(f"{n:.2g}/s of [{i}]")
+
     print("")
 
 
