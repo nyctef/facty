@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 
 @dataclass
@@ -68,3 +68,12 @@ class Recipe:
     @property
     def name(self):
         return self._name or self.output[0].name
+
+
+@dataclass
+class ReportLine:
+    assembler: Assembler | None
+    parallel_count: float
+    target: str
+    target_count_per_s: float
+    sub_lines: list["ReportLine"] = field(default_factory=list)
