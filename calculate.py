@@ -103,6 +103,3 @@ def print_report(report: ReportLine):
 
 report = calculate_target("Electronic components", 8, Assemblers.assembler_1)
 print_report(report)
-
-
-# TODO: print total buildings and input resources
