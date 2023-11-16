@@ -28,7 +28,8 @@ class Assemblers:
     crusher = Assembler("Crusher", 1)
     stone_furnace = Assembler("Stone furnace", 1)
     steel_furnace = Assembler("Steel furnace", 2)
-
+    refinery = Assembler("Refinery", 1)  
+ 
 
 @dataclass
 class Recipe:

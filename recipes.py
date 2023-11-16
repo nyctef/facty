@@ -1,57 +1,36 @@
-from model import Recipe, RecipeItem, Assemblers
+from model import Recipe, RecipeItem, Assembler, Assemblers
+import yaml
+from pprint import pprint
 
-recipes = [
-    Recipe(
-        [RecipeItem("Logistic tech card", 5)],
-        [
-            RecipeItem("Iron gear wheel", 5),
-            RecipeItem("Electronic circuit", 5),
-            RecipeItem("Blank tech card", 5),
-        ],
-        20,
-    ),
-    Recipe([RecipeItem("Iron gear wheel", 4)], [RecipeItem("Iron plate", 4)], 2),
-    Recipe(
-        [RecipeItem("Electronic circuit", 2)],
-        [
-            RecipeItem("Iron plate", 1),
-            RecipeItem("Wood"),
-            RecipeItem("Copper cable", 4),
-        ],
-        2,
-    ),
-    Recipe(
-        [RecipeItem("Blank tech card", 5)],
-        [RecipeItem("Iron plate", 2), RecipeItem("Copper cable", 2)],
-        2,
-    ),
-    Recipe([RecipeItem("Copper cable", 8)], [RecipeItem("Copper plate", 4)], 2),
-    Recipe(
-        [RecipeItem("Petroleum gas", 45)],
-        [RecipeItem("Crude oil", 100)],
-        5,
-    ).named("Basic oil processing"),
-    Recipe([RecipeItem("Sand", 7.5)], [RecipeItem("Stone", 3)], 1).on_assembler(
-        Assemblers.crusher
-    ),
-    Recipe(
-        [RecipeItem("Quartz", 6)],
-        [RecipeItem("Sand", 10), RecipeItem("Water", 10)],
-        2.1,
-    ).on_assembler(Assemblers.filtration_plant),
-    Recipe([RecipeItem("Silicon", 9)], [RecipeItem("Quartz", 18)], 16).on_assembler(
-        Assemblers.stone_furnace
-    ),
-    Recipe([RecipeItem("Glass", 8)], [RecipeItem("Sand", 16)], 16).on_assembler(
-        Assemblers.stone_furnace
-    ),
-    Recipe(
-        [RecipeItem("Electronic components", 4)],
-        [
-            RecipeItem("Glass", 2),
-            RecipeItem("Silicon", 2),
-            RecipeItem("Plastic bar", 2),
-        ],
-        4,
-    ),
-]
+assemblers = [getattr(Assemblers, a) for a in dir(Assemblers)]
+assembler_lookup = {a.name: a for a in assemblers if isinstance(a, Assembler)}
+
+def parse_recipe_item(i: list | str):
+    if isinstance(i, str):
+        count, name = i.split(" ", 1)
+        return RecipeItem(name, float(count))
+    elif isinstance(i, list):
+        return [parse_recipe_item(j) for j in i]
+    else:
+        raise NotImplementedError
+
+def as_list(i: list[RecipeItem] | RecipeItem):
+    if isinstance(i, list):
+        return i
+    else:
+        return [i]
+
+def parse_recipe(r: dict):
+    duration = r.get("dur", 1)
+    out = as_list(parse_recipe_item(r.get("out", [])))
+    in_ = as_list(parse_recipe_item(r.get("in", [])))
+    name = r.get("name", None)
+    assembler = assembler_lookup[r.get("ass", "ASSEMBLER")]
+
+    return Recipe(out, in_, duration, name, assembler)
+
+with open("recipes.yaml", "r") as f:
+    recipes_yaml = yaml.safe_load(f)
+
+recipes = [parse_recipe(r) for r in recipes_yaml]
+

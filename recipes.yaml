@@ -1,0 +1,64 @@
+- out: 5 Logistic tech card
+  in:
+    - 5 Iron gear wheel
+    - 5 Electronic circuit
+    - 5 Blank tech card
+  dur: 20
+
+- out: 4 Iron gear wheel
+  in: 4 Iron plate
+  dur: 2
+
+- out: 2 Electronic circuit
+  in:
+    - 1 Iron plate
+    - 1 Wood
+    - 4 Copper cable
+  dur: 2
+
+- out: 5 Blank tech card
+  in:
+    - 2 Iron plate
+    - 2 Copper cable
+  dur: 2
+
+- out: 8 Copper cable
+  in:
+    - 4 Copper plate
+  dur: 2
+
+- name: Basic oil processing
+  out: 45 Petroleum gas
+  in: 100 Crude oil
+  dur: 5
+  ass: Refinery
+
+- out: 7.5 Sand
+  in: 3 Stone
+  ass: Crusher
+
+- out: 6 Quartz
+  in:
+    - 10 Sand
+    - 10 Water
+  dur: 2.1
+  ass: Filtration plant
+
+- out: 9 Silicon
+  in: 18 Quartz
+  dur: 16
+  ass: Stone furnace
+
+- out: 8 Glass
+  in: 16 Sand
+  dur: 16
+  ass: Stone furnace
+
+- out: 4 Electronic components
+  in:
+    - 2 Glass
+    - 2 Silicon
+    - 2 Plastic bar
+  dur: 4
+
+
