@@ -36,7 +36,7 @@ class Recipe:
     input: list[RecipeItem]
     duration: float
     _name: str | None = None
-    _assembler: Assembler = Assemblers.ideal_assembler
+    _assembler: Assembler = field(default_factory=lambda:Assemblers.ideal_assembler)
     parallel_count: float = 1
 
     def parallel(self, count: float):
