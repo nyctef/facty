@@ -7,6 +7,79 @@ from typing import Any, Dict, List, Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# list of recipes to ignore that don't neatly have some attribute to ignore them by
+other_ignored_recipes = set(
+    """
+aai-express-loader
+aai-fast-loader
+aai-loader
+aai-signal-receiver
+aai-signal-sender
+aai-storehouse
+aai-storehouse-active-provider
+aai-storehouse-buffer
+aai-storehouse-passive-provider
+aai-storehouse-requester
+aai-storehouse-storage
+aai-strongbox
+aai-strongbox-active-provider
+aai-strongbox-buffer
+aai-strongbox-passive-provider
+aai-strongbox-requester
+aai-strongbox-storage
+aai-warehouse
+aai-warehouse-active-provider
+aai-warehouse-buffer
+aai-warehouse-passive-provider
+aai-warehouse-requester
+aai-warehouse-storage
+car
+cargo-landing-pad
+equipment-gantry
+equipment-gantry-remover
+iron-chest
+ironclad
+land-mine
+se-addon-power-pole
+se-antimatter-reactor
+se-big-heat-exchanger
+se-big-turbine
+se-cargo-rocket-cargo-pod
+se-casting-machine
+se-compact-beacon
+se-compact-beacon-2
+se-condenser-turbine
+se-core-miner-drill
+se-energy-beam-defence
+se-energy-receiver
+se-energy-transmitter-chamber
+se-energy-transmitter-emitter
+se-energy-transmitter-injector
+se-methane-ice
+se-naquium-heat-pipe
+se-naquium-heat-pipe-long--t--
+se-naquium-heat-pipe-long--t-----t--
+se-nexus
+se-pylon
+se-pylon-construction
+se-pylon-construction-radar
+se-pylon-substation
+se-rocket-launch-pad
+se-space-assembling-machine
+se-space-capsule
+se-space-elevator
+se-space-probe-rocket-silo
+se-supercharger
+se-water-ice
+se-wide-beacon
+se-wide-beacon-2
+shield-projector
+small-electric-pole
+tank
+wooden-chest
+""".strip().splitlines()
+)
+
 
 @dataclass
 class Ingredient:
@@ -45,6 +118,7 @@ class Result:
 @dataclass
 class Recipe:
     name: str
+    category: str
     ingredients: list[Ingredient]
     results: list[Result]
     energy_required: float
@@ -97,16 +171,33 @@ def _parse_recipe(rec: Dict[str, Any]) -> Optional[Recipe]:
         # textplates
         logger.debug(f"Skipping recipe: {name}")
         return None
+    if "se-deep-space" in name or "se-space-pipe" in name or "se-spaceship" in name:
+        # isn't tagged with space-manufacturing but requires mats that are
+        logger.debug(f"Skipping recipe: {name}")
+        return None
+    if name in other_ignored_recipes:
+        logger.debug(f"Skipping recipe: {name}")
+        return None
+
     logger.debug(f"Parsing recipe: {name}")
     ingredients = [_parse_ingredient(ing) for ing in rec.get("ingredients", [])]
     results = [_parse_result(res) for res in rec.get("results", [])]
+    category = rec.get("category", "crafting")
 
     if not results or not ingredients:
         logger.warning(f"Recipe {name} has no ingredients or no results, skipping.")
         return None
 
+    if category == "space-manufacturing" or category == "space-crafting":
+        # skip recipes that can only be made in space
+        return None
+    if category == "core-fragment-processing":
+        # skip core fragment processing recipes
+        return None
+
     return Recipe(
         name,
+        category,
         ingredients=ingredients,
         results=results,
         energy_required=rec.get("energy_required", 0.5),
