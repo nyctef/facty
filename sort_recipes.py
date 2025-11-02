@@ -235,9 +235,20 @@ def read_json(file_path: Path) -> List[Recipe]:
         return [r for r in recipes if r.name in placeable_by_player]
 
 
-def jaccard_similarity(recipe1: Recipe, recipe2: Recipe) -> float:
-    """Count how many ingredients the two recipes have in common,
-    compared to how many ingredients the recipes have in total."""
+def recipe_similarity(recipe1: Recipe, recipe2: Recipe) -> float:
+
+    # if one recipe is an ingredient of the other, we want to cluster those together:
+    if recipe1.name in (ing.name for ing in recipe2.ingredients) or recipe2.name in (
+        ing.name for ing in recipe1.ingredients
+    ):
+        # TODO: this check doesn't quite work right, because we only invoke it for one recipe
+        # out of the current cluster. When looking for a next-best recipe, we should check the
+        # similarity of all remaining recipes against each recipe in the current cluster, and
+        # then pick all the next-best options, including ties.
+        return 0.99
+
+    # Jaccard similarity: Count how many ingredients the two recipes have in common,
+    # compared to how many ingredients the recipes have in total.
     ingredients1 = {ing.name for ing in recipe1.ingredients}
     ingredients2 = {ing.name for ing in recipe2.ingredients}
 
@@ -269,7 +280,7 @@ def cluster_recipes_by_similarity(recipes: List[Recipe]) -> List[Recipe]:
         # Once we've run out of those, switch to the next most similar recipe
         # and continue from there
         for i, recipe in enumerate(remaining):
-            similarity = jaccard_similarity(current, recipe)
+            similarity = recipe_similarity(current, recipe)
             if similarity == 1.0:
                 # Perfect match, add immediately and continue with this recipe
                 clustered.append(recipe)
