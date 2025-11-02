@@ -307,7 +307,10 @@ def main() -> None:
 
     ingredients: list[str] = sorted(
         set(
-            i.name for r in recipes for i in r.ingredients if i.name not in recipe_names
+            i.name
+            for r in recipes
+            for i in r.ingredients
+            # if i.name not in recipe_names
         )
     )
     # logger.info("Ingredients:")
