@@ -93,6 +93,10 @@ def _parse_recipe(rec: Dict[str, Any]) -> Optional[Recipe]:
         # editor extensions
         logger.debug(f"Skipping recipe: {name}")
         return None
+    if name.startswith("textplate-"):
+        # textplates
+        logger.debug(f"Skipping recipe: {name}")
+        return None
     logger.debug(f"Parsing recipe: {name}")
     ingredients = [_parse_ingredient(ing) for ing in rec.get("ingredients", [])]
     results = [_parse_result(res) for res in rec.get("results", [])]
@@ -129,9 +133,19 @@ def read_json(file_path: Path) -> List[Recipe]:
 
 def main() -> None:
     recipes = read_json(dump_path)
-    recipes = [r.name for r in recipes]
-    recipes.sort()
-    logger.info("\n".join(recipes))
+    recipe_names = [r.name for r in recipes]
+    recipe_names.sort()
+
+    logger.info("Recipes:")
+    logger.info("\n".join(recipe_names))
+
+    ingredients: list[str] = sorted(
+        set(
+            i.name for r in recipes for i in r.ingredients if i.name not in recipe_names
+        )
+    )
+    logger.info("Ingredients:")
+    logger.info("\n".join(ingredients))
 
 
 if __name__ == "__main__":
