@@ -227,16 +227,54 @@ def main() -> None:
     recipe_names = [r.name for r in recipes]
     recipe_names.sort()
 
-    logger.info("Recipes:")
-    logger.info("\n".join(recipe_names))
+    # logger.info("Recipes:")
+    # logger.info("\n".join(recipe_names))
 
     ingredients: list[str] = sorted(
         set(
             i.name for r in recipes for i in r.ingredients if i.name not in recipe_names
         )
     )
-    logger.info("Ingredients:")
-    logger.info("\n".join(ingredients))
+    # logger.info("Ingredients:")
+    # logger.info("\n".join(ingredients))
+
+    # Create ASCII table showing recipes vs ingredients
+    max_recipe_name_len = max(len(name) for name in recipe_names)
+    ingredient_count = len(ingredients)
+
+    # Print header
+    print(f"\n{'Recipe':<{max_recipe_name_len}} ", end="")
+    max_ingredient_len = max(len(ingredient) for ingredient in ingredients)
+
+    # Print header vertically
+    for row in range(max_ingredient_len):
+        print(" " * (max_recipe_name_len + 1), end="")
+        for ingredient in ingredients:
+            if row < max_ingredient_len - len(ingredient):
+                print(" ", end="")
+            else:
+                char_index = row - (max_ingredient_len - len(ingredient))
+                print(ingredient[char_index], end="")
+        print()
+
+    # Print separator line
+    print("-" * max_recipe_name_len + " " + "-" * ingredient_count)
+
+    # Create ingredient lookup for faster access
+    recipe_dict = {r.name: r for r in recipes}
+
+    # Print each recipe row
+    for recipe_name in recipe_names:
+        recipe = recipe_dict[recipe_name]
+        recipe_ingredients = {i.name for i in recipe.ingredients}
+
+        print(f"{recipe_name:<{max_recipe_name_len}} ", end="")
+        for ingredient in ingredients:
+            if ingredient in recipe_ingredients:
+                print("x", end="")
+            else:
+                print(" ", end="")
+        print()
 
 
 if __name__ == "__main__":
