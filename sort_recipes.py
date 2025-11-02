@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from dataclasses import dataclass
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -222,10 +222,72 @@ def read_json(file_path: Path) -> List[Recipe]:
         return [r for r in recipes if r.name in placeable_by_player]
 
 
+def jaccard_similarity(recipe1: Recipe, recipe2: Recipe) -> float:
+    """Count how many ingredients the two recipes have in common,
+    compared to how many ingredients the recipes have in total."""
+    ingredients1 = {ing.name for ing in recipe1.ingredients}
+    ingredients2 = {ing.name for ing in recipe2.ingredients}
+
+    intersection = len(ingredients1.intersection(ingredients2))
+    union = len(ingredients1.union(ingredients2))
+
+    if union == 0:
+        return 0.0
+    return intersection / union
+
+
+def cluster_recipes_by_similarity(recipes: List[Recipe]) -> List[Recipe]:
+    if not recipes:
+        return recipes
+
+    clustered: list[Recipe] = []
+    remaining = recipes.copy()
+
+    # Start with the first recipe
+    current = remaining.pop(0)
+    clustered.append(current)
+
+    while remaining:
+        next_best_similarity = 0.0
+        next_best_recipe = None
+        next_best_index = -1
+
+        # Find any recipes that have exactly the same ingredients
+        # Once we've run out of those, switch to the next most similar recipe
+        # and continue from there
+        for i, recipe in enumerate(remaining):
+            similarity = jaccard_similarity(current, recipe)
+            if similarity == 1.0:
+                # Perfect match, add immediately and continue with this recipe
+                clustered.append(recipe)
+                remaining.pop(i)
+                break
+            elif similarity > next_best_similarity:
+                next_best_similarity = similarity
+                next_best_recipe = recipe
+                next_best_index = i
+        else:
+            # No perfect match found, use the best non-perfect match
+            if next_best_recipe is not None:
+                clustered.append(next_best_recipe)
+                current = remaining.pop(next_best_index)
+            else:
+                # No similar recipes found, just take the first one
+                current = remaining.pop(0)
+                clustered.append(current)
+
+    return clustered
+
+
 def main() -> None:
     recipes = read_json(dump_path)
-    recipe_names = [r.name for r in recipes]
-    recipe_names.sort()
+
+    # Cluster recipes by ingredient similarity instead of alphabetical sorting
+    logger.info("Clustering recipes by ingredient similarity...")
+    clustered_recipes = cluster_recipes_by_similarity(recipes)
+    recipe_names = [r.name for r in clustered_recipes]
+
+    print(f"Found {len(recipe_names)} recipes clustered by ingredient similarity")
 
     # logger.info("Recipes:")
     # logger.info("\n".join(recipe_names))
@@ -262,7 +324,7 @@ def main() -> None:
     print("-" * max_recipe_name_len + " " + "--" * ingredient_count)
 
     # Create ingredient lookup for faster access
-    recipe_dict = {r.name: r for r in recipes}
+    recipe_dict = {r.name: r for r in clustered_recipes}
 
     # Print each recipe row
     for recipe_name in recipe_names:
