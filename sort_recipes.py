@@ -312,6 +312,8 @@ def cluster_recipes_by_similarity(recipes: List[Recipe]) -> List[Recipe]:
             # since eg in practice we start with something like laser-turret
             # then find assembling-machine-2 and solar-panel as equally similar,
             # but adding both breaks the chain of similarity
+            #
+            # Maybe it would work with some kind of priority queue?
             for i, recipe in next_best_recipes:
                 result.append(recipe)
                 current_cluster.append(recipe)
