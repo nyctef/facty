@@ -1,9 +1,9 @@
-import os
 import json
 from pathlib import Path
 from dataclasses import dataclass
 from pprint import pprint
 import logging
+from typing import Any, Dict, List, Optional
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -25,13 +25,15 @@ class Result:
     probability: float
 
     @classmethod
-    def from_amount(cls, type, name, amount):
+    def from_amount(cls, type: str, name: str, amount: int) -> "Result":
         return cls(
             type=type, name=name, amount_min=amount, amount_max=amount, probability=1.0
         )
 
     @classmethod
-    def from_probability(cls, type, name, amount_min, amount_max, probability):
+    def from_probability(
+        cls, type: str, name: str, amount_min: int, amount_max: int, probability: float
+    ) -> "Result":
         return cls(
             type=type,
             name=name,
@@ -58,13 +60,13 @@ if not dump_path.exists():
     )
 
 
-def _parse_ingredient(ing):
+def _parse_ingredient(ing: Dict[str, Any]) -> Ingredient:
     return Ingredient(
         type=ing.get("type", "item"), name=ing["name"], amount=ing["amount"]
     )
 
 
-def _parse_result(ing):
+def _parse_result(ing: Dict[str, Any]) -> Result:
     if "amount" in ing:
         return Result.from_amount(
             type=ing.get("type", "item"),
@@ -82,7 +84,7 @@ def _parse_result(ing):
     # TODO: ignored_by_stats, ignored_by_productivity, any other fields
 
 
-def _parse_recipe(rec):
+def _parse_recipe(rec: Dict[str, Any]) -> Optional[Recipe]:
     name = rec["name"]
     if name.startswith("parameter-") or name == "recipe-unknown":
         logger.debug(f"Skipping recipe: {name}")
@@ -103,7 +105,7 @@ def _parse_recipe(rec):
     )
 
 
-def read_json(file_path):
+def read_json(file_path: Path) -> List[Recipe]:
     with open(file_path, "r", encoding="utf-8") as f:
         doc = json.load(f)
         recipes = [
@@ -114,7 +116,7 @@ def read_json(file_path):
         return recipes
 
 
-def main():
+def main() -> None:
     recipes = read_json(dump_path)
     pprint(recipes)
 
