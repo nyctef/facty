@@ -77,8 +77,9 @@ def _parse_result(ing):
             name=ing["name"],
             amount_min=ing["amount_min"],
             amount_max=ing["amount_max"],
-            probability=ing["probability"],
+            probability=ing.get("probability", 1.0),
         )
+    # TODO: ignored_by_stats, ignored_by_productivity, any other fields
 
 
 def _parse_recipe(rec):
