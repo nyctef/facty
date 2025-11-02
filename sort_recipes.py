@@ -86,6 +86,11 @@ def _parse_result(ing: Dict[str, Any]) -> Result:
 def _parse_recipe(rec: Dict[str, Any]) -> Optional[Recipe]:
     name = rec["name"]
     if name.startswith("parameter-") or name == "recipe-unknown":
+        # placeholders
+        logger.debug(f"Skipping recipe: {name}")
+        return None
+    if name.startswith("ee-"):
+        # editor extensions
         logger.debug(f"Skipping recipe: {name}")
         return None
     logger.debug(f"Parsing recipe: {name}")
