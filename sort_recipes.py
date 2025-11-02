@@ -175,6 +175,19 @@ def _parse_recipe(rec: Dict[str, Any]) -> Optional[Recipe]:
         # isn't tagged with space-manufacturing but requires mats that are
         logger.debug(f"Skipping recipe: {name}")
         return None
+    if (
+        "transport-belt" in name
+        or "splitter" in name
+        or "underground-belt" in name
+        or "loader" in name
+    ):
+        # we already know we're going to put these in their own belt section:
+        logger.debug(f"Skipping recipe: {name}")
+        return None
+    if "inserter" in name:
+        # we already know we're going to put these in their own inserter section:
+        logger.debug(f"Skipping recipe: {name}")
+        return None
     if name in other_ignored_recipes:
         logger.debug(f"Skipping recipe: {name}")
         return None
