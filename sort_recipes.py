@@ -1,11 +1,10 @@
 import json
 from pathlib import Path
 from dataclasses import dataclass
-from pprint import pprint
 import logging
 from typing import Any, Dict, List, Optional
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -123,7 +122,9 @@ def read_json(file_path: Path) -> List[Recipe]:
 
 def main() -> None:
     recipes = read_json(dump_path)
-    pprint(recipes)
+    recipes = [r.name for r in recipes]
+    recipes.sort()
+    logger.info("\n".join(recipes))
 
 
 if __name__ == "__main__":
