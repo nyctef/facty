@@ -255,10 +255,11 @@ def main() -> None:
             else:
                 char_index = row - (max_ingredient_len - len(ingredient))
                 print(ingredient[char_index], end="")
+            print(" ", end="")
         print()
 
     # Print separator line
-    print("-" * max_recipe_name_len + " " + "-" * ingredient_count)
+    print("-" * max_recipe_name_len + " " + "--" * ingredient_count)
 
     # Create ingredient lookup for faster access
     recipe_dict = {r.name: r for r in recipes}
@@ -271,9 +272,9 @@ def main() -> None:
         print(f"{recipe_name:<{max_recipe_name_len}} ", end="")
         for ingredient in ingredients:
             if ingredient in recipe_ingredients:
-                print("x", end="")
+                print("x ", end="")
             else:
-                print(" ", end="")
+                print("  ", end="")
         print()
 
 
