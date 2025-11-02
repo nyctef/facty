@@ -113,7 +113,12 @@ def read_json(file_path: Path) -> List[Recipe]:
             for r in doc["recipe"].values()
             if r.get("type") == "recipe" and (recipe := _parse_recipe(r)) is not None
         ]
-        return recipes
+        placeable_by_player: set[str] = set()
+        for category in doc.values():
+            for proto in category.values():
+                if (flags := proto.get("flags")) and "placeable-player" in flags:
+                    placeable_by_player.add(proto["name"])
+        return [r for r in recipes if r.name in placeable_by_player]
 
 
 def main() -> None:
