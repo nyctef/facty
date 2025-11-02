@@ -120,7 +120,9 @@ def read_json(file_path: Path) -> List[Recipe]:
         placeable_by_player: set[str] = set()
         for category in doc.values():
             for proto in category.values():
-                if (flags := proto.get("flags")) and "placeable-player" in flags:
+                if (flags := proto.get("flags")) and (
+                    "placeable-player" in flags or "placeable-neutral" in flags
+                ):
                     placeable_by_player.add(proto["name"])
         return [r for r in recipes if r.name in placeable_by_player]
 
