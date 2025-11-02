@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any, Dict, List, Optional
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # list of recipes to ignore that don't neatly have some attribute to ignore them by
@@ -241,10 +241,6 @@ def recipe_similarity(recipe1: Recipe, recipe2: Recipe) -> float:
     if recipe1.name in (ing.name for ing in recipe2.ingredients) or recipe2.name in (
         ing.name for ing in recipe1.ingredients
     ):
-        # TODO: this check doesn't quite work right, because we only invoke it for one recipe
-        # out of the current cluster. When looking for a next-best recipe, we should check the
-        # similarity of all remaining recipes against each recipe in the current cluster, and
-        # then pick all the next-best options, including ties.
         return 0.99
 
     # Jaccard similarity: Count how many ingredients the two recipes have in common,
@@ -264,43 +260,69 @@ def cluster_recipes_by_similarity(recipes: List[Recipe]) -> List[Recipe]:
     if not recipes:
         return recipes
 
-    clustered: list[Recipe] = []
+    result: list[Recipe] = []
     remaining = recipes.copy()
 
     # Start with the first recipe
     current = remaining.pop(0)
-    clustered.append(current)
+    current_cluster: list[Recipe] = [current]
+    result.append(current)
 
     while remaining:
         next_best_similarity = 0.0
-        next_best_recipe = None
-        next_best_index = -1
+        next_best_recipes: list[tuple[int, Recipe]] = []
+        to_remove: list[int] = []
 
         # Find any recipes that have exactly the same ingredients
         # Once we've run out of those, switch to the next most similar recipe
         # and continue from there
+        logger.debug(f"{current.name=}, searching through {len(remaining)=}")
         for i, recipe in enumerate(remaining):
             similarity = recipe_similarity(current, recipe)
             if similarity == 1.0:
                 # Perfect match, add immediately and continue with this recipe
-                clustered.append(recipe)
-                remaining.pop(i)
-                break
+                logger.debug(f"Found exact match: {recipe.name=}")
+                result.append(recipe)
+                current_cluster.append(recipe)
+                to_remove.append(i)
             elif similarity > next_best_similarity:
+                logger.debug(f"Found next best match: {recipe.name=}, {similarity=}")
                 next_best_similarity = similarity
-                next_best_recipe = recipe
-                next_best_index = i
-        else:
-            # No perfect match found, use the best non-perfect match
-            if next_best_recipe is not None:
-                clustered.append(next_best_recipe)
-                current = remaining.pop(next_best_index)
-            else:
-                # No similar recipes found, just take the first one
-                current = remaining.pop(0)
-                clustered.append(current)
+                next_best_recipes = [(i, recipe)]
+            elif similarity == next_best_similarity:
+                logger.debug(
+                    f"Found next best match (tie): {recipe.name=}, {similarity=}"
+                )
+                next_best_recipes.append((i, recipe))
 
-    return clustered
+        for i in sorted(to_remove, reverse=True):
+            # Remove from the end to avoid messing up indices
+            remaining.pop(i)
+
+        # When looking for a next-best recipe, we should check the
+        # similarity of all remaining recipes against each recipe in the current cluster, and
+        # then pick all the next-best options, including ties.
+
+        # TODO: I'm not convinced this logic is quite right (it feels like it should be recursive but isn't)
+
+        current_cluster = []
+        if next_best_recipes:
+            # Add all next-best recipes (in case of ties)
+            # TODO: we probably don't actually want to do this
+            # since eg in practice we start with something like laser-turret
+            # then find assembling-machine-2 and solar-panel as equally similar,
+            # but adding both breaks the chain of similarity
+            for i, recipe in next_best_recipes:
+                result.append(recipe)
+                current_cluster.append(recipe)
+            # Remove them from remaining
+            for i, _ in sorted(next_best_recipes, reverse=True):
+                # Remove from the end to avoid messing up indices
+                remaining.pop(i)
+            # Continue with the last added recipe
+            current = next_best_recipes[-1][1]
+
+    return result
 
 
 def main() -> None:
