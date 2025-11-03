@@ -82,6 +82,8 @@ wooden-chest
 )
 
 # ingredients that we'd likely feed off the bus rather than making locally in the mall
+# TODO: instead of ignoring other ingredients here, we should really inline certain recipes
+# that we expect to make locally, so then we group recipes by the transitive input ingredients
 input_ingredients = set(
     """
 iron-plate
