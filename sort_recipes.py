@@ -81,6 +81,27 @@ wooden-chest
 """.strip().splitlines()
 )
 
+# ingredients that we'd likely feed off the bus rather than making locally in the mall
+input_ingredients = set(
+    """
+iron-plate
+steel-plate
+copper-plate
+pipe
+stone
+electronic-circuit
+advanced-circuit
+processing-unit
+low-density-structure
+engine-unit
+electric-engine-unit
+motor
+electric-motor
+battery
+concrete
+""".strip().splitlines()
+)
+
 
 @dataclass
 class Ingredient:
@@ -246,8 +267,12 @@ def recipe_similarity(recipe1: Recipe, recipe2: Recipe) -> float:
 
     # Jaccard similarity: Count how many ingredients the two recipes have in common,
     # compared to how many ingredients the recipes have in total.
-    ingredients1 = {ing.name for ing in recipe1.ingredients}
-    ingredients2 = {ing.name for ing in recipe2.ingredients}
+    ingredients1 = {
+        ing.name for ing in recipe1.ingredients if ing.name in input_ingredients
+    }
+    ingredients2 = {
+        ing.name for ing in recipe2.ingredients if ing.name in input_ingredients
+    }
 
     intersection = len(ingredients1.intersection(ingredients2))
     union = len(ingredients1.union(ingredients2))
@@ -320,8 +345,11 @@ def cluster_recipes_by_similarity(recipes: List[Recipe]) -> List[Recipe]:
                 current_cluster.append(recipe)
             # Remove them from remaining
             for i, _ in sorted(next_best_recipes, reverse=True):
-                # Remove from the end to avoid messing up indices
-                remaining.pop(i)
+                try:
+                    # Remove from the end to avoid messing up indices
+                    remaining.pop(i)
+                except IndexError:
+                    pass  # TODO
             # Continue with the last added recipe
             current = next_best_recipes[-1][1]
 
@@ -346,7 +374,7 @@ def main() -> None:
             i.name
             for r in recipes
             for i in r.ingredients
-            # if i.name not in recipe_names
+            if i.name in input_ingredients
         )
     )
     # logger.info("Ingredients:")
