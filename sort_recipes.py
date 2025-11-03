@@ -351,6 +351,9 @@ def cluster_recipes_by_similarity(recipes: List[Recipe]) -> List[Recipe]:
                     # Remove from the end to avoid messing up indices
                     remaining.pop(i)
                 except IndexError:
+                    logger.warning(
+                        f"IndexError when removing recipe from remaining list {i=} {len(remaining)=}"
+                    )
                     pass  # TODO
             # Continue with the last added recipe
             current = next_best_recipes[-1][1]
