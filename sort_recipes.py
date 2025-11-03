@@ -3,6 +3,7 @@ from pathlib import Path
 from dataclasses import dataclass
 import logging
 from typing import Any, Dict, List, Optional
+import csv
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -389,6 +390,30 @@ def main() -> None:
             else:
                 print("  ", end="")
         print()
+
+    # Write results to CSV file
+    scratch_dir = Path("scratch")
+    scratch_dir.mkdir(exist_ok=True)
+    csv_path = scratch_dir / "recipe_ingredient_matrix.csv"
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+
+        # Write header row
+        header = ["Recipe"] + ingredients
+        writer.writerow(header)
+
+        # Write data rows
+        for recipe_name in recipe_names:
+            recipe = recipe_dict[recipe_name]
+            recipe_ingredients = {i.name for i in recipe.ingredients}
+
+            row = [recipe_name]
+            for ingredient in ingredients:
+                row.append("x" if ingredient in recipe_ingredients else "")
+            writer.writerow(row)
+
+    print(f"\nResults written to {csv_path}")
 
 
 if __name__ == "__main__":
